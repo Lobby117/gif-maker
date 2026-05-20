@@ -248,6 +248,16 @@
     background: #e5e5e5;
     transform: translateY(-1px);
   }
+  .cta.secondary {
+    margin-top: 10px;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .cta.secondary:hover:not(:disabled) {
+    background: var(--card-hover);
+  }
+  .cta[hidden] { display: none; }
   .cta:disabled {
     background: var(--card);
     color: var(--text-mute);
@@ -324,6 +334,7 @@
   </div>
 
   <button class="cta" id="makeBtn" disabled>GIF 만들기</button>
+  <button class="cta secondary" id="shareBtn" hidden disabled>공유하기</button>
   <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
   <div class="status" id="status">먼저 사진을 추가해주세요</div>
 
@@ -374,6 +385,7 @@ const state = {
   delays: [300, 500, 700, 1000, 1200],
   speedIdx: 3,
   busy: false,
+  result: null,
 };
 
 const $ = id => document.getElementById(id);
@@ -386,9 +398,40 @@ const sizePills = $('sizePills');
 const speedSlider = $('speedSlider');
 const speedLabel = $('speedLabel');
 const makeBtn = $('makeBtn');
+const shareBtn = $('shareBtn');
 const statusEl = $('status');
 const progress = $('progress');
 const progressBar = $('progressBar');
+
+function clearResult() {
+  state.result = null;
+  shareBtn.hidden = true;
+  shareBtn.disabled = true;
+}
+
+function gifFile(blob, filename) {
+  return new File([blob], filename, { type: 'image/gif' });
+}
+
+function canShareGif(blob, filename) {
+  if (!navigator.share || !navigator.canShare) return false;
+  try {
+    return navigator.canShare({ files: [gifFile(blob, filename)] });
+  } catch {
+    return false;
+  }
+}
+
+function downloadGif(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 // prevent Chrome from opening dropped files in a new tab
 window.addEventListener('dragover', e => e.preventDefault());
@@ -419,6 +462,7 @@ dropzone.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', e => handleFiles(Array.from(e.target.files)));
 
 function handleFiles(files) {
+  clearResult();
   const imgs = files.filter(f => /^image\/(png|jpeg|jpg|webp)$/i.test(f.type));
   if (imgs.length === 0) {
     setStatus('이미지 파일만 사용할 수 있어요', 'error');
@@ -450,6 +494,7 @@ function renderThumbs() {
 sizePills.addEventListener('click', e => {
   const btn = e.target.closest('.pill');
   if (!btn) return;
+  clearResult();
   sizePills.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   state.width = parseInt(btn.dataset.w);
@@ -457,6 +502,7 @@ sizePills.addEventListener('click', e => {
 });
 
 speedSlider.addEventListener('input', e => {
+  clearResult();
   state.speedIdx = parseInt(e.target.value);
   const sec = (state.delays[state.speedIdx] / 1000).toFixed(1);
   speedLabel.textContent = `${sec}초마다 전환`;
@@ -505,6 +551,7 @@ makeBtn.addEventListener('click', async () => {
   if (state.files.length === 0) return;
 
   state.busy = true;
+  clearResult();
   makeBtn.disabled = true;
   makeBtn.textContent = '처리 중...';
   setStatus('라이브러리 로딩 중...', '');
@@ -557,18 +604,14 @@ makeBtn.addEventListener('click', async () => {
     const filename = `my_gif_${ts}.gif`;
     const blob = new Blob([bytes], { type: 'image/gif' });
 
-    if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/gif' })] })) {
-      await navigator.share({ files: [new File([blob], filename, { type: 'image/gif' })], title: 'GIF' });
-      setStatus(`✓ 완료 · ${sizeMB.toFixed(2)} MB`, 'success');
+    downloadGif(blob, filename);
+    state.result = { blob, filename, sizeMB };
+
+    if (canShareGif(blob, filename)) {
+      shareBtn.hidden = false;
+      shareBtn.disabled = false;
+      setStatus(`✓ 저장 완료 · ${sizeMB.toFixed(2)} MB · 공유 가능`, 'success');
     } else {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
       setStatus(`✓ 저장 완료 · ${sizeMB.toFixed(2)} MB`, 'success');
     }
   } catch (err) {
@@ -579,6 +622,31 @@ makeBtn.addEventListener('click', async () => {
     makeBtn.disabled = false;
     makeBtn.textContent = 'GIF 만들기';
     setTimeout(() => setProgress(null), 1500);
+  }
+});
+
+shareBtn.addEventListener('click', async () => {
+  if (!state.result || state.busy) return;
+  const { blob, filename, sizeMB } = state.result;
+  if (!canShareGif(blob, filename)) {
+    shareBtn.hidden = true;
+    shareBtn.disabled = true;
+    setStatus(`✓ 저장 완료 · ${sizeMB.toFixed(2)} MB`, 'success');
+    return;
+  }
+  shareBtn.disabled = true;
+  try {
+    await navigator.share({ files: [gifFile(blob, filename)], title: 'GIF' });
+    setStatus(`✓ 공유 완료 · ${sizeMB.toFixed(2)} MB`, 'success');
+  } catch (err) {
+    if (err && err.name === 'AbortError') {
+      setStatus(`공유 취소됨 · ${sizeMB.toFixed(2)} MB`, '');
+    } else {
+      console.error(err);
+      setStatus('공유 실패 · 다운로드된 파일 사용', 'error');
+    }
+  } finally {
+    shareBtn.disabled = false;
   }
 });
 </script>
