@@ -336,7 +336,7 @@
 let gifencCache;
 async function loadGifenc() {
   if (gifencCache) return gifencCache;
-  gifencCache = await import('https://esm.sh/gifenc@1.0.3');
+  gifencCache = await import('https://cdn.jsdelivr.net/npm/gifenc@1.0.3/+esm');
   return gifencCache;
 }
 
