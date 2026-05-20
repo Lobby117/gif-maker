@@ -340,6 +340,33 @@ async function loadGifenc() {
   return gifencCache;
 }
 
+let iqCache;
+async function loadImageQ() {
+  if (iqCache) return iqCache;
+  iqCache = await import('https://cdn.jsdelivr.net/npm/image-q@4.0.0/+esm');
+  return iqCache;
+}
+
+function iqPaletteToArray(iqPalette) {
+  const points = iqPalette.getPointContainer().getPointArray();
+  return points.map(p => [p.r, p.g, p.b]);
+}
+
+function rgbaToIndexed(rgba, palette) {
+  const indexed = new Uint8Array(rgba.length / 4);
+  for (let p = 0, i = 0; p < indexed.length; p++, i += 4) {
+    let best = 0, bestDist = Infinity;
+    const r = rgba[i], g = rgba[i+1], b = rgba[i+2];
+    for (let j = 0; j < palette.length; j++) {
+      const dr = r - palette[j][0], dg = g - palette[j][1], db = b - palette[j][2];
+      const d = dr*dr + dg*dg + db*db;
+      if (d < bestDist) { bestDist = d; best = j; if (d === 0) break; }
+    }
+    indexed[p] = best;
+  }
+  return indexed;
+}
+
 const state = {
   files: [],
   width: 800,
@@ -484,7 +511,7 @@ makeBtn.addEventListener('click', async () => {
   setProgress(0);
 
   try {
-    const { GIFEncoder, quantize, applyPalette } = await loadGifenc();
+    const [{ GIFEncoder }, iq] = await Promise.all([loadGifenc(), loadImageQ()]);
     setStatus('이미지 리사이즈 중...', '');
     const { width: w, height: h } = state;
     const delay = state.delays[state.speedIdx];
@@ -501,8 +528,18 @@ makeBtn.addEventListener('click', async () => {
 
     const gif = GIFEncoder();
     for (let i = 0; i < frameDatas.length; i++) {
-      const palette = quantize(frameDatas[i], 256, { format: 'rgb565' });
-      const indexed = applyPalette(frameDatas[i], palette, 'rgb565');
+      const pointContainer = iq.utils.PointContainer.fromUint8Array(frameDatas[i], w, h);
+      const iqPalette = iq.buildPaletteSync([pointContainer], {
+        colors: 256,
+        colorDistanceFormula: 'pngquant',
+        paletteQuantization: 'wuquant',
+      });
+      const dithered = iq.applyPaletteSync(pointContainer, iqPalette, {
+        colorDistanceFormula: 'pngquant',
+        imageQuantization: 'floyd-steinberg',
+      });
+      const palette = iqPaletteToArray(iqPalette);
+      const indexed = rgbaToIndexed(dithered.toUint8Array(), palette);
       gif.writeFrame(indexed, w, h, {
         palette,
         delay,
