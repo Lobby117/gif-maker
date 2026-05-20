@@ -281,14 +281,14 @@
   </header>
 
   <div class="section-title">① 사진 추가</div>
-  <label class="dropzone" id="dropzone">
+  <div class="dropzone" id="dropzone">
     <svg class="dropzone-icon" viewBox="0 0 24 24">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
     </svg>
     <div class="dropzone-text" id="dropText">사진 3~5장을 끌어다 놓으세요</div>
     <div class="dropzone-sub" id="dropSub">JPG · PNG · WEBP</div>
     <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" multiple>
-  </label>
+  </div>
   <div class="thumbs" id="thumbs"></div>
 
   <div class="section-title">② 출력 사이즈</div>
@@ -339,19 +339,26 @@ const statusEl = $('status');
 const progress = $('progress');
 const progressBar = $('progressBar');
 
+// prevent Chrome from opening dropped files in a new tab
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
 ['dragenter', 'dragover'].forEach(ev =>
   dropzone.addEventListener(ev, e => {
     e.preventDefault();
+    e.stopPropagation();
     dropzone.classList.add('drag-over');
   })
 );
 ['dragleave', 'drop'].forEach(ev =>
   dropzone.addEventListener(ev, e => {
     e.preventDefault();
+    e.stopPropagation();
     dropzone.classList.remove('drag-over');
   })
 );
 dropzone.addEventListener('drop', e => handleFiles(Array.from(e.dataTransfer.files)));
+dropzone.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', e => handleFiles(Array.from(e.target.files)));
 
 function handleFiles(files) {
