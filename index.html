@@ -332,15 +332,12 @@
   </p>
 </main>
 
-<script>
-let GIFEncoder, quantize, applyPalette;
+<script type="module">
+let gifencCache;
 async function loadGifenc() {
-  if (GIFEncoder) return;
-  const mod = await import('https://esm.sh/gifenc@1.0.3');
-  const src = (mod.default && mod.default.GIFEncoder) ? mod.default : mod;
-  GIFEncoder = src.GIFEncoder;
-  quantize = src.quantize;
-  applyPalette = src.applyPalette;
+  if (gifencCache) return gifencCache;
+  gifencCache = await import('https://esm.sh/gifenc@1.0.3');
+  return gifencCache;
 }
 
 const state = {
@@ -487,7 +484,7 @@ makeBtn.addEventListener('click', async () => {
   setProgress(0);
 
   try {
-    await loadGifenc();
+    const { GIFEncoder, quantize, applyPalette } = await loadGifenc();
     setStatus('이미지 리사이즈 중...', '');
     const { width: w, height: h } = state;
     const delay = state.delays[state.speedIdx];
