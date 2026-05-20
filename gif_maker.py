@@ -161,6 +161,7 @@ class GifMakerApp:
 
     def _on_drop(self, event):
         files = self.root.tk.splitlist(event.data)
+        files = [f.strip('{}') for f in files]
         valid = [f for f in files if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))]
         self._handle_files(valid)
 
@@ -326,11 +327,12 @@ class GifMakerApp:
 
             self.root.after(0, self._set_status, "GIF 저장 중...")
             tmp = save_path + ".tmp.gif"
-            quantized[0].save(
-                tmp, format="GIF",
-                append_images=quantized[1:], save_all=True,
-                duration=delay_ms, loop=0, optimize=True, disposal=2,
-            )
+            with open(tmp, 'wb') as f:
+                quantized[0].save(
+                    f, format="GIF",
+                    append_images=quantized[1:], save_all=True,
+                    duration=delay_ms, loop=0, optimize=True, disposal=2,
+                )
 
             self.root.after(0, self._set_status, "압축 최적화 중...")
             gifsicle = get_gifsicle_path()
@@ -360,7 +362,7 @@ class GifMakerApp:
         if sys.platform == "darwin":
             subprocess.run(["open", "-R", save_path], check=False)
         elif sys.platform == "win32":
-            subprocess.run(["explorer", "/select,", save_path], check=False)
+            subprocess.run(f'explorer /select,"{save_path}"', shell=True, check=False)
 
     def _on_error(self, msg):
         self.is_processing = False
