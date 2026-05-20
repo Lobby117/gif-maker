@@ -2,10 +2,22 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import os
+import sys
+import subprocess
 from datetime import datetime
 
 # 드래그 앤 드롭 라이브러리
 from tkinterdnd2 import TkinterDnD, DND_FILES
+
+
+def get_gifsicle_path():
+    """PyInstaller 번들 안의 gifsicle 우선, 없으면 시스템 PATH."""
+    exe_name = 'gifsicle.exe' if sys.platform == 'win32' else 'gifsicle'
+    if hasattr(sys, '_MEIPASS'):
+        bundled = os.path.join(sys._MEIPASS, exe_name)
+        if os.path.exists(bundled):
+            return bundled
+    return exe_name
 
 class GifMakerApp:
     def __init__(self, root):
@@ -149,8 +161,10 @@ class GifMakerApp:
                     qf = f.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
                 quantized.append(qf)
 
+            # 1단계: PIL로 임시 GIF 저장
+            temp_path = save_path + '.tmp.gif'
             quantized[0].save(
-                save_path,
+                temp_path,
                 format='GIF',
                 append_images=quantized[1:],
                 save_all=True,
@@ -159,8 +173,25 @@ class GifMakerApp:
                 optimize=True,
                 disposal=2,
             )
-            messagebox.showinfo("성공!", f"바탕화면에 저장되었습니다!\n파일명: my_gif_{timestamp}.gif")
-            
+
+            # 2단계: gifsicle로 후처리 (용량 압축 + 프레임간 최적화)
+            # -O3: 최대 최적화, --lossy=80: 손실 LZW 압축 (시각적 차이 거의 없이 용량 30~50% 감소)
+            gifsicle = get_gifsicle_path()
+            try:
+                subprocess.run(
+                    [gifsicle, '-O3', '--lossy=80', '--careful', temp_path, '-o', save_path],
+                    check=True,
+                    capture_output=True,
+                    timeout=60,
+                )
+                os.remove(temp_path)
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                # gifsicle 없거나 실패하면 PIL 결과 그대로 사용
+                os.replace(temp_path, save_path)
+
+            file_size_mb = os.path.getsize(save_path) / (1024 * 1024)
+            messagebox.showinfo("성공!", f"바탕화면에 저장되었습니다!\n파일명: my_gif_{timestamp}.gif\n용량: {file_size_mb:.2f} MB")
+
         except Exception as e:
             messagebox.showerror("오류 발생", f"문제가 생겼어:\n{e}")
 

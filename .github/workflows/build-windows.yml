@@ -22,6 +22,15 @@ jobs:
         run: |
           pip install pillow tkinterdnd2 pyinstaller
 
+      - name: Download gifsicle
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://eternallybored.org/misc/gifsicle/releases/gifsicle-1.96-win64.zip" -OutFile "gifsicle.zip"
+          Expand-Archive -Path "gifsicle.zip" -DestinationPath "gifsicle_tmp"
+          $exe = Get-ChildItem -Path "gifsicle_tmp" -Recurse -Filter "gifsicle.exe" | Select-Object -First 1
+          Copy-Item $exe.FullName -Destination "gifsicle.exe"
+          Test-Path "gifsicle.exe"
+
       - name: Build EXE
         run: |
           pyinstaller gif_maker_windows.spec

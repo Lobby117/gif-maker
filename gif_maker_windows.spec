@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 from PyInstaller.utils.hooks import collect_all
 
 datas = []
@@ -6,6 +7,10 @@ binaries = []
 hiddenimports = []
 tmp_ret = collect_all('tkinterdnd2')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+
+# gifsicle.exe 번들 (GitHub Actions에서 미리 다운로드해둠)
+if os.path.exists('gifsicle.exe'):
+    binaries.append(('gifsicle.exe', '.'))
 
 a = Analysis(
     ['gif_maker.py'],
