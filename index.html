@@ -496,25 +496,15 @@ makeBtn.addEventListener('click', async () => {
       setProgress(((i + 1) / state.files.length) * 30);
     }
 
-    setStatus('공유 팔레트 생성 중...', '');
-    await new Promise(r => setTimeout(r, 10));
-
-    const totalLen = frameDatas.reduce((s, d) => s + d.length, 0);
-    const combined = new Uint8ClampedArray(totalLen);
-    let off = 0;
-    for (const d of frameDatas) { combined.set(d, off); off += d.length; }
-
-    const palette = quantize(combined, 256, { format: 'rgb444' });
-    setProgress(50);
-
     setStatus('GIF 인코딩 중...', '');
     await new Promise(r => setTimeout(r, 10));
 
     const gif = GIFEncoder();
     for (let i = 0; i < frameDatas.length; i++) {
-      const indexed = applyPalette(frameDatas[i], palette, 'rgb444');
+      const palette = quantize(frameDatas[i], 256, { format: 'rgb565' });
+      const indexed = applyPalette(frameDatas[i], palette, 'rgb565');
       gif.writeFrame(indexed, w, h, {
-        palette: i === 0 ? palette : undefined,
+        palette,
         delay,
         dispose: 2,
       });
