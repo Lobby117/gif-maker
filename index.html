@@ -553,18 +553,24 @@ makeBtn.addEventListener('click', async () => {
 
     const bytes = gif.bytes();
     const sizeMB = bytes.length / (1024 * 1024);
-    const blob = new Blob([bytes], { type: 'image/gif' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
     const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
-    a.href = url;
-    a.download = `my_gif_${ts}.gif`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const filename = `my_gif_${ts}.gif`;
+    const blob = new Blob([bytes], { type: 'image/gif' });
 
-    setStatus(`✓ 저장 완료 · ${sizeMB.toFixed(2)} MB · 다운로드 폴더 확인`, 'success');
+    if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/gif' })] })) {
+      await navigator.share({ files: [new File([blob], filename, { type: 'image/gif' })], title: 'GIF' });
+      setStatus(`✓ 완료 · ${sizeMB.toFixed(2)} MB`, 'success');
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setStatus(`✓ 저장 완료 · ${sizeMB.toFixed(2)} MB`, 'success');
+    }
   } catch (err) {
     console.error(err);
     setStatus('오류: ' + (err.message || err), 'error');
