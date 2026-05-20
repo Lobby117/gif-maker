@@ -41,9 +41,9 @@ class GifMakerApp:
 
         # 2. 출력 사이즈 선택
         tk.Label(root, text="[ 2. 출력 사이즈 선택 ]", font=("맑은 고딕", 12, "bold")).pack(pady=(15, 5))
-        self.size_var = tk.StringVar(value="800x800")
-        tk.Radiobutton(root, text="정방형 (800 x 800)", variable=self.size_var, value="800x800").pack()
-        tk.Radiobutton(root, text="세로형 (640 x 768)", variable=self.size_var, value="640x768").pack()
+        self.size_var = tk.StringVar(value="1200x1200")
+        tk.Radiobutton(root, text="정방형 (1200 x 1200)", variable=self.size_var, value="1200x1200").pack()
+        tk.Radiobutton(root, text="세로형 (960 x 1152)", variable=self.size_var, value="960x1152").pack()
 
         # 3. 속도 조절 (슬라이드바)
         tk.Label(root, text="[ 3. 사진 변경 속도 조절 ]", font=("맑은 고딕", 12, "bold")).pack(pady=(15, 5))
