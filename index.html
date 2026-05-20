@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>제품 GIF 메이커</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card: #161616;
+    --card-hover: #1f1f1f;
+    --border: #2a2a2a;
+    --border-active: #ffffff;
+    --text: #ffffff;
+    --text-dim: #888888;
+    --text-mute: #555555;
+    --accent: #ffffff;
+    --accent-fg: #0a0a0a;
+    --success: #4ade80;
+    --error: #f87171;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 20px 80px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .header {
+    margin-bottom: 32px;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .header p {
+    margin-top: 6px;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 28px 0 10px;
+  }
+
+  .dropzone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .dropzone:hover,
+  .dropzone.drag-over {
+    border-color: var(--border-active);
+    background: var(--card-hover);
+  }
+  .dropzone.has-files {
+    border-style: solid;
+    border-color: var(--success);
+  }
+  .dropzone-icon {
+    width: 40px;
+    height: 40px;
+    opacity: 0.5;
+    stroke: var(--text);
+    stroke-width: 1.5;
+    fill: none;
+  }
+  .dropzone-text {
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .dropzone-sub {
+    color: var(--text-mute);
+    font-size: 12px;
+  }
+  .dropzone input[type=file] {
+    display: none;
+  }
+
+  .thumbs {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .pills {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .pill {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 14px 12px;
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+  }
+  .pill:hover { background: var(--card-hover); color: var(--text); }
+  .pill.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+  .pill .pill-sub {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    margin-top: 2px;
+    opacity: 0.7;
+  }
+
+  .slider-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 18px 16px;
+  }
+  .slider-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-mute);
+    margin-bottom: 10px;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--text);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 0;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: var(--text);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 0;
+  }
+  .slider-label {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .cta {
+    margin-top: 28px;
+    width: 100%;
+    background: var(--accent);
+    color: var(--accent-fg);
+    border: 0;
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .cta:hover:not(:disabled) {
+    background: #e5e5e5;
+    transform: translateY(-1px);
+  }
+  .cta:disabled {
+    background: var(--card);
+    color: var(--text-mute);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .status {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-dim);
+    min-height: 20px;
+    font-weight: 500;
+  }
+  .status.success { color: var(--success); }
+  .status.error { color: var(--error); }
+
+  .progress {
+    margin-top: 12px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    display: none;
+  }
+  .progress.active { display: block; }
+  .progress-bar {
+    height: 100%;
+    background: var(--text);
+    width: 0%;
+    transition: width 0.2s ease;
+  }
+
+  .note {
+    margin-top: 32px;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<main class="app">
+
+  <header class="header">
+    <h1>제품 GIF 메이커</h1>
+    <p>쇼핑몰 상세페이지용 · 사진 3~5장 → GIF</p>
+  </header>
+
+  <div class="section-title">① 사진 추가</div>
+  <label class="dropzone" id="dropzone">
+    <svg class="dropzone-icon" viewBox="0 0 24 24">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+    </svg>
+    <div class="dropzone-text" id="dropText">사진 3~5장을 끌어다 놓으세요</div>
+    <div class="dropzone-sub" id="dropSub">JPG · PNG · WEBP</div>
+    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" multiple>
+  </label>
+  <div class="thumbs" id="thumbs"></div>
+
+  <div class="section-title">② 출력 사이즈</div>
+  <div class="pills" id="sizePills">
+    <button class="pill active" data-w="800" data-h="800">정방형<span class="pill-sub">800 × 800</span></button>
+    <button class="pill" data-w="640" data-h="768">세로형<span class="pill-sub">640 × 768</span></button>
+  </div>
+
+  <div class="section-title">③ 전환 속도</div>
+  <div class="slider-card">
+    <div class="slider-row"><span>빠름</span><span>느림</span></div>
+    <input type="range" id="speedSlider" min="0" max="4" value="3" step="1">
+    <div class="slider-label" id="speedLabel">1.0초마다 전환</div>
+  </div>
+
+  <button class="cta" id="makeBtn" disabled>GIF 만들기</button>
+  <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="status" id="status">먼저 사진을 추가해주세요</div>
+
+  <p class="note">
+    파일은 다운로드 폴더에 저장됩니다 · 브라우저 안에서만 동작 (서버 전송 없음)
+  </p>
+</main>
+
+<script type="module">
+import { GIFEncoder, quantize, applyPalette } from 'https://esm.sh/gifenc@1.0.3';
+
+const state = {
+  files: [],
+  width: 800,
+  height: 800,
+  delays: [300, 500, 700, 1000, 1200],
+  speedIdx: 3,
+  busy: false,
+};
+
+const $ = id => document.getElementById(id);
+const dropzone = $('dropzone');
+const fileInput = $('fileInput');
+const thumbs = $('thumbs');
+const dropText = $('dropText');
+const dropSub = $('dropSub');
+const sizePills = $('sizePills');
+const speedSlider = $('speedSlider');
+const speedLabel = $('speedLabel');
+const makeBtn = $('makeBtn');
+const statusEl = $('status');
+const progress = $('progress');
+const progressBar = $('progressBar');
+
+['dragenter', 'dragover'].forEach(ev =>
+  dropzone.addEventListener(ev, e => {
+    e.preventDefault();
+    dropzone.classList.add('drag-over');
+  })
+);
+['dragleave', 'drop'].forEach(ev =>
+  dropzone.addEventListener(ev, e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+  })
+);
+dropzone.addEventListener('drop', e => handleFiles(Array.from(e.dataTransfer.files)));
+fileInput.addEventListener('change', e => handleFiles(Array.from(e.target.files)));
+
+function handleFiles(files) {
+  const imgs = files.filter(f => /^image\/(png|jpeg|jpg|webp)$/i.test(f.type));
+  if (imgs.length === 0) {
+    setStatus('이미지 파일만 사용할 수 있어요', 'error');
+    return;
+  }
+  if (imgs.length < 3 || imgs.length > 5) {
+    setStatus(`${imgs.length}장 선택됨 · 3~5장만 가능해요`, 'error');
+    return;
+  }
+  state.files = imgs;
+  dropzone.classList.add('has-files');
+  dropText.textContent = `${imgs.length}장 준비 완료`;
+  dropSub.textContent = '다시 끌어다 놓으면 교체';
+  renderThumbs();
+  makeBtn.disabled = false;
+  setStatus('준비 완료 · GIF 만들기 버튼을 눌러주세요', 'success');
+}
+
+function renderThumbs() {
+  thumbs.innerHTML = '';
+  for (const f of state.files) {
+    const img = document.createElement('img');
+    img.className = 'thumb';
+    img.src = URL.createObjectURL(f);
+    thumbs.appendChild(img);
+  }
+}
+
+sizePills.addEventListener('click', e => {
+  const btn = e.target.closest('.pill');
+  if (!btn) return;
+  sizePills.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  state.width = parseInt(btn.dataset.w);
+  state.height = parseInt(btn.dataset.h);
+});
+
+speedSlider.addEventListener('input', e => {
+  state.speedIdx = parseInt(e.target.value);
+  const sec = (state.delays[state.speedIdx] / 1000).toFixed(1);
+  speedLabel.textContent = `${sec}초마다 전환`;
+});
+
+function setStatus(text, cls = '') {
+  statusEl.textContent = text;
+  statusEl.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function setProgress(pct) {
+  if (pct === null) {
+    progress.classList.remove('active');
+    progressBar.style.width = '0%';
+  } else {
+    progress.classList.add('active');
+    progressBar.style.width = pct + '%';
+  }
+}
+
+async function loadAndCrop(file, w, h) {
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
+  await img.decode();
+
+  const ratio = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+  const newW = img.naturalWidth * ratio;
+  const newH = img.naturalHeight * ratio;
+  const dx = (w - newW) / 2;
+  const dy = (h - newH) / 2;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, dx, dy, newW, newH);
+
+  URL.revokeObjectURL(img.src);
+  return ctx.getImageData(0, 0, w, h);
+}
+
+makeBtn.addEventListener('click', async () => {
+  if (state.busy) return;
+  if (state.files.length === 0) return;
+
+  state.busy = true;
+  makeBtn.disabled = true;
+  makeBtn.textContent = '처리 중...';
+  setStatus('이미지 리사이즈 중...', '');
+  setProgress(0);
+
+  try {
+    const { width: w, height: h } = state;
+    const delay = state.delays[state.speedIdx];
+
+    const frameDatas = [];
+    for (let i = 0; i < state.files.length; i++) {
+      const imgData = await loadAndCrop(state.files[i], w, h);
+      frameDatas.push(imgData.data);
+      setProgress(((i + 1) / state.files.length) * 30);
+    }
+
+    setStatus('공유 팔레트 생성 중...', '');
+    await new Promise(r => setTimeout(r, 10));
+
+    const totalLen = frameDatas.reduce((s, d) => s + d.length, 0);
+    const combined = new Uint8ClampedArray(totalLen);
+    let off = 0;
+    for (const d of frameDatas) { combined.set(d, off); off += d.length; }
+
+    const palette = quantize(combined, 256, { format: 'rgb444' });
+    setProgress(50);
+
+    setStatus('GIF 인코딩 중...', '');
+    await new Promise(r => setTimeout(r, 10));
+
+    const gif = GIFEncoder();
+    for (let i = 0; i < frameDatas.length; i++) {
+      const indexed = applyPalette(frameDatas[i], palette, 'rgb444');
+      gif.writeFrame(indexed, w, h, {
+        palette: i === 0 ? palette : undefined,
+        delay,
+        dispose: 2,
+      });
+      setProgress(50 + ((i + 1) / frameDatas.length) * 45);
+      await new Promise(r => setTimeout(r, 5));
+    }
+    gif.finish();
+    setProgress(100);
+
+    const bytes = gif.bytes();
+    const sizeMB = bytes.length / (1024 * 1024);
+    const blob = new Blob([bytes], { type: 'image/gif' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    a.href = url;
+    a.download = `my_gif_${ts}.gif`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    setStatus(`✓ 저장 완료 · ${sizeMB.toFixed(2)} MB · 다운로드 폴더 확인`, 'success');
+  } catch (err) {
+    console.error(err);
+    setStatus('오류: ' + (err.message || err), 'error');
+  } finally {
+    state.busy = false;
+    makeBtn.disabled = false;
+    makeBtn.textContent = 'GIF 만들기';
+    setTimeout(() => setProgress(null), 1500);
+  }
+});
+</script>
+</body>
+</html>
