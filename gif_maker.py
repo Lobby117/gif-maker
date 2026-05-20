@@ -321,8 +321,14 @@ class GifMakerApp:
                     qf = f.quantize(colors=256, method=Image.Quantize.LIBIMAGEQUANT,
                                     dither=Image.Dither.FLOYDSTEINBERG)
                 except (ValueError, OSError):
-                    qf = f.quantize(colors=256, method=Image.Quantize.MEDIANCUT,
-                                    dither=Image.Dither.FLOYDSTEINBERG)
+                    # PyPI Pillow Windows wheels don't bundle libimagequant.
+                    # FASTOCTREE is significantly better than MEDIANCUT.
+                    # Note: OCTREE constant removed in Pillow 11+; use FASTOCTREE.
+                    try:
+                        qf = f.quantize(colors=256, method=Image.Quantize.FASTOCTREE)
+                    except (AttributeError, ValueError, OSError):
+                        qf = f.quantize(colors=256, method=Image.Quantize.MEDIANCUT,
+                                        dither=Image.Dither.FLOYDSTEINBERG)
                 quantized.append(qf)
 
             self.root.after(0, self._set_status, "GIF 저장 중...")

@@ -35,15 +35,14 @@ jobs:
                            dither=Image.Dither.FLOYDSTEINBERG)
               print('LIBIMAGEQUANT: OK (best quality)')
           except (ValueError, OSError) as e:
-              print(f'LIBIMAGEQUANT: not available ({e}) - using OCTREE fallback')
+              print(f'LIBIMAGEQUANT: not available ({e}) - using FASTOCTREE fallback')
 
-          # Verify OCTREE works (required - significantly better than MEDIANCUT)
+          # Verify FASTOCTREE works (required fallback - OCTREE constant removed in Pillow 11+)
           try:
-              img.quantize(colors=256, method=Image.Quantize.OCTREE,
-                           dither=Image.Dither.FLOYDSTEINBERG)
-              print('OCTREE: OK (fallback quantizer confirmed)')
+              img.quantize(colors=256, method=Image.Quantize.FASTOCTREE)
+              print('FASTOCTREE: OK (fallback quantizer confirmed)')
           except Exception as e:
-              print(f'OCTREE: FAILED -> {e}')
+              print(f'FASTOCTREE: FAILED -> {e}')
               raise SystemExit(1)
           "
 
