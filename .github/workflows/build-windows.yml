@@ -22,20 +22,28 @@ jobs:
         run: |
           pip install pillow tkinterdnd2 pyinstaller
 
-      - name: Verify libimagequant support
+      - name: Verify quantizer availability
         run: |
           python -c "
           from PIL import Image
 
-          img = Image.new('RGB', (2, 2), color=(255, 0, 0))
+          img = Image.new('RGB', (4, 4), color=(255, 128, 0))
 
+          # Check LIBIMAGEQUANT (best quality - not available in PyPI Windows wheels)
           try:
-              q = img.quantize(colors=256, method=Image.Quantize.LIBIMAGEQUANT,
-                               dither=Image.Dither.FLOYDSTEINBERG)
-              print('LIBIMAGEQUANT: OK')
+              img.quantize(colors=256, method=Image.Quantize.LIBIMAGEQUANT,
+                           dither=Image.Dither.FLOYDSTEINBERG)
+              print('LIBIMAGEQUANT: OK (best quality)')
           except (ValueError, OSError) as e:
-              print(f'LIBIMAGEQUANT: FAILED -> {e}')
-              print('Pillow wheel does not include libimagequant. GIF quality will be degraded.')
+              print(f'LIBIMAGEQUANT: not available ({e}) - using OCTREE fallback')
+
+          # Verify OCTREE works (required - significantly better than MEDIANCUT)
+          try:
+              img.quantize(colors=256, method=Image.Quantize.OCTREE,
+                           dither=Image.Dither.FLOYDSTEINBERG)
+              print('OCTREE: OK (fallback quantizer confirmed)')
+          except Exception as e:
+              print(f'OCTREE: FAILED -> {e}')
               raise SystemExit(1)
           "
 
