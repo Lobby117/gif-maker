@@ -177,12 +177,15 @@ class GifMakerApp:
             # 2단계: gifsicle로 후처리 (용량 압축 + 프레임간 최적화)
             # -O3: 최대 최적화, --lossy=80: 손실 LZW 압축 (시각적 차이 거의 없이 용량 30~50% 감소)
             gifsicle = get_gifsicle_path()
+            # Windows windowed 빌드에서 콘솔 창 깜박임 방지
+            creationflags = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
             try:
                 subprocess.run(
                     [gifsicle, '-O3', '--lossy=80', '--careful', temp_path, '-o', save_path],
                     check=True,
                     capture_output=True,
                     timeout=60,
+                    creationflags=creationflags,
                 )
                 os.remove(temp_path)
             except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
