@@ -332,8 +332,15 @@
   </p>
 </main>
 
-<script type="module">
-import { GIFEncoder, quantize, applyPalette } from 'https://esm.sh/gifenc@1.0.3';
+<script>
+let GIFEncoder, quantize, applyPalette;
+async function loadGifenc() {
+  if (GIFEncoder) return;
+  const mod = await import('https://esm.sh/gifenc@1.0.3');
+  GIFEncoder = mod.GIFEncoder;
+  quantize = mod.quantize;
+  applyPalette = mod.applyPalette;
+}
 
 const state = {
   files: [],
@@ -475,10 +482,12 @@ makeBtn.addEventListener('click', async () => {
   state.busy = true;
   makeBtn.disabled = true;
   makeBtn.textContent = '처리 중...';
-  setStatus('이미지 리사이즈 중...', '');
+  setStatus('라이브러리 로딩 중...', '');
   setProgress(0);
 
   try {
+    await loadGifenc();
+    setStatus('이미지 리사이즈 중...', '');
     const { width: w, height: h } = state;
     const delay = state.delays[state.speedIdx];
 
