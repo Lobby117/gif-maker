@@ -123,15 +123,15 @@ class GifMakerApp:
         try:
             frames = []
             for path in self.image_paths:
-                img = Image.open(path)
-                
+                img = Image.open(path).convert('RGB')
+
                 # 중앙 자르기(Center Crop) 로직
                 img_w, img_h = img.size
                 ratio = max(w / img_w, h / img_h)
                 new_w = int(img_w * ratio)
                 new_h = int(img_h * ratio)
                 img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-                
+
                 left = (new_w - w) / 2
                 top = (new_h - h) / 2
                 right = (new_w + w) / 2
@@ -139,7 +139,26 @@ class GifMakerApp:
                 img = img.crop((left, top, right, bottom))
                 frames.append(img)
 
-            frames[0].save(save_path, format='GIF', append_images=frames[1:], save_all=True, duration=delay_ms, loop=0)
+            # 256색 양자화 + Floyd-Steinberg 디더링 (색띠 제거)
+            # libimagequant 가능하면 사용 (지각적 양자화, 최고 품질), 아니면 MEDIANCUT
+            quantized = []
+            for f in frames:
+                try:
+                    qf = f.quantize(colors=256, method=Image.Quantize.LIBIMAGEQUANT, dither=Image.Dither.FLOYDSTEINBERG)
+                except (ValueError, OSError):
+                    qf = f.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
+                quantized.append(qf)
+
+            quantized[0].save(
+                save_path,
+                format='GIF',
+                append_images=quantized[1:],
+                save_all=True,
+                duration=delay_ms,
+                loop=0,
+                optimize=True,
+                disposal=2,
+            )
             messagebox.showinfo("성공!", f"바탕화면에 저장되었습니다!\n파일명: my_gif_{timestamp}.gif")
             
         except Exception as e:
