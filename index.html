@@ -337,9 +337,10 @@ let GIFEncoder, quantize, applyPalette;
 async function loadGifenc() {
   if (GIFEncoder) return;
   const mod = await import('https://esm.sh/gifenc@1.0.3');
-  GIFEncoder = mod.GIFEncoder;
-  quantize = mod.quantize;
-  applyPalette = mod.applyPalette;
+  const src = (mod.default && mod.default.GIFEncoder) ? mod.default : mod;
+  GIFEncoder = src.GIFEncoder;
+  quantize = src.quantize;
+  applyPalette = src.applyPalette;
 }
 
 const state = {
